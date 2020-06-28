@@ -1,6 +1,10 @@
 var express = require('express');
 var router = express.Router();
 var formidable = require('formidable');
+var firebase = require('firebase/app');
+
+require('firebase/auth');
+require('firebase/database');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
