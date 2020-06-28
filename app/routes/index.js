@@ -6,6 +6,9 @@ var firebase = require('firebase/app');
 require('firebase/auth');
 require('firebase/database');
 
+//npm start
+//start the server
+
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });

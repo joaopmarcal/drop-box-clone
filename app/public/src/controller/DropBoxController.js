@@ -7,9 +7,11 @@ class DropBoxController {
         this.progressBarEl = this.snackModalEl.querySelector('.mc-progress-bar-fg');
         this.namefileEl = this.snackModalEl.querySelector('.filename');
         this.timeleftEl = this.snackModalEl.querySelector('.timeleft');
+        this.listFilesEl = document.querySelector('#list-of-files-and-directories');
 
         this.connectFirebase();
         this.initEvents();
+        this.readFiles();
     }
 
     connectFirebase(){
@@ -222,9 +224,11 @@ class DropBoxController {
                                 c-0.131-1.296,1.072-0.867,1.753-0.876c0.796-0.011,1.668,0.118,1.588,1.293C97.394,93.857,97.226,94.871,96.229,94.8z"></path>
                     </svg>
                 `;
+            break;
 
             case 'audio/mp3':
             case 'audio/ogg':
+            case 'audio/mpeg':
                 return `
                     <svg width="160" height="160" viewBox="0 0 160 160" class="mc-icon-template-content tile__preview tile__preview--icon">
                         <title>content-audio-large</title>
@@ -337,20 +341,44 @@ class DropBoxController {
                     </g>
                 </svg>
                 `;
+             break;
 
 
         }
 
     }
 
-    getFileView(file){
+    getFileView(file,key){
 
-        return `
-            <li>
-                ${this.getFileIconView(file)}
-                <div class="name text-center">${file.name}</div>
-            </li>
+        let li = document.createElement('li');
+
+        li.dataset.key = key;
+
+        li.innerHTML = `
+            ${this.getFileIconView(file)}
+            <div class="name text-center">${file.name}</div>
         `;
+
+        return li;
+
+    }
+
+    readFiles(){
+
+        this.getFirebaseRef().on('value', snapshot => {
+
+            this.listFilesEl.innerHTML = '';
+
+            snapshot.forEach(snapshotItem => {
+
+                let key = snapshotItem.key;
+                let data = snapshotItem.val();
+
+                this.listFilesEl.appendChild(this.getFileView(data, key));
+
+            });
+
+        })
 
     }
 
