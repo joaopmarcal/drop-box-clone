@@ -166,7 +166,12 @@ class DropBoxController {
 
                 responses.forEach(resp => {
 
-                    this.getFirebaseRef().push().set(resp.files['input-file'])
+                    this.getFirebaseRef().push().set({
+                       name: resp.name,
+                       type: resp.contentType,
+                       path: resp.downloadURLs[0],
+                       size: resp.size
+                    });
 
                 });
 
@@ -242,17 +247,39 @@ class DropBoxController {
 
         let promises = [];
 
-        [...files].forEach(file=>{
+        [...files].forEach(file => {
 
-            let formData = new FormData();
+            promises.push(new Promise((resolve, reject)=>{
 
-            formData.append('input-file', file);
+                let fileRef = firebase.storage().ref(this.currentFolder.join('/')).child(file.name);
 
-            promises.push(this.ajax('/upload', 'POST', formData, ()=>{
-                this.uploadProgress(event, file);
-            }, ()=>{
+                let task = fileRef.put(file);
 
-                this.startUploadTime = Date.now();
+                task.on('state_changed', snapshot => {
+
+                    this.uploadProgress({
+                        loaded: snapshot.bytesTransferred,
+                        total: snapshot.totalBytes
+                    },file);
+
+                },error => {
+
+                    console.error(error);
+                    reject(error);
+
+                }, () => {
+
+                    fileRef.getMetadata().then(metadata=>{
+
+                        resolve(metadata);
+
+                    }).catch(err=>{
+
+                        reject(err);
+
+                    });
+
+                });
 
             }));
 
