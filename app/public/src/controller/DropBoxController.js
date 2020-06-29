@@ -60,12 +60,27 @@ class DropBoxController {
             let file = JSON.parse(li.dataset.file);
             let key = li.dataset.key;
 
-            let formData = new FormData();
+            promises.push(new Promise((resolve, reject)=>{
 
-            formData.append('path', file.path);
-            formData.append('key', key);
+                let fileRef = firebase.storage().ref(this.currentFolder.join('/')).child(file.name);
 
-            promises.push(this.ajax('/file', 'DELETE', formData));
+                fileRef.delete().then(()=>{
+
+                    resolve({
+
+                       fields: {
+                           key
+                       }
+
+                    });
+
+                }).catch(err =>{
+
+                    reject(err);
+
+                });
+
+            }));
 
         });
 
@@ -162,18 +177,17 @@ class DropBoxController {
 
             this.btnSendFileEl.disabled = true;
 
-            this.uploadTask(event.target.files).then(responses => {
+            this.uploadTask( event.target.files ).then( responses => {
 
-                responses.forEach(resp => {
+                responses.forEach( resp => {
 
                     this.getFirebaseRef().push().set({
-                       name: resp.name,
-                       type: resp.contentType,
-                       path: resp.downloadURLs[0],
-                       size: resp.size
-                    });
-
-                });
+                        name: resp.name,
+                        type: resp.contentType,
+                        path: resp.customMetadata.downloadURL,
+                        size: resp.size
+                    })
+                })
 
                 this.uploadComplete();
 
@@ -269,16 +283,20 @@ class DropBoxController {
 
                 }, () => {
 
-                    fileRef.getMetadata().then(metadata=>{
+                        task.snapshot.ref.getDownloadURL().then( downloadURL => {
 
-                        resolve(metadata);
+                        task.snapshot.ref.updateMetadata({ customMetadata: { downloadURL }}).then( metadata => {
 
-                    }).catch(err=>{
+                            resolve( metadata )
 
-                        reject(err);
+                        }).catch(error=>{
+
+                            console.error( 'Error update metadata:', error)
+                            reject(err);
+
+                        });
 
                     });
-
                 });
 
             }));
